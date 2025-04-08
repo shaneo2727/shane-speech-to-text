@@ -1,4 +1,4 @@
-import { FC, useState } from "react";
+import { FC, useEffect, useRef, useState } from "react";
 import SpeechRecognition, {
   useSpeechRecognition,
 } from "react-speech-recognition";
@@ -14,28 +14,93 @@ interface RecorderProps {}
 const Recorder: FC<RecorderProps> = ({}) => {
   const { transcript, listening, resetTranscript } = useSpeechRecognition();
 
+  const [audioBlob, setAudioBlob] = useState<Blob>();
   const [recordingStatus, setRecordingStatus] = useState<RecordingStatusEnum>(
     RecordingStatusEnum.STOPPED,
   );
+  const [remoteTranscription, setRemoteTranscription] = useState<string>();
+  const [wasRecordingOnline, setWasRecordingOnline] = useState<boolean>(true);
+
+  const mediaRecorderRef = useRef<MediaRecorder>(null);
+
+  const handleOnline = async () => {
+    if (!wasRecordingOnline) {
+      const res = await fetch("api/v1/google_text_to_speech", {
+        method: "POST",
+        body: audioBlob,
+      });
+      const jsonResult = await res.json();
+      setRemoteTranscription(jsonResult["results"]);
+    }
+  };
+
+  useEffect(() => {
+    window.addEventListener("online", handleOnline);
+
+    return () => {
+      window.removeEventListener("online", handleOnline);
+    };
+  }, [wasRecordingOnline]);
 
   const handleStartRecording = async () => {
     await SpeechRecognition.startListening({ continuous: true });
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const recorder = new MediaRecorder(stream);
+    const audioBlobs: Blob[] = [];
+
+    recorder.ondataavailable = (event) => {
+      audioBlobs.push(event.data);
+    };
+
+    recorder.onstop = async () => {
+      setAudioBlob(new Blob(audioBlobs, { type: "audio/webm" }));
+    };
+
+    recorder.start();
+    mediaRecorderRef.current = recorder;
 
     if (recordingStatus == RecordingStatusEnum.STOPPED) {
       resetTranscript();
+    }
+
+    if (recordingStatus == RecordingStatusEnum.STOPPED) {
+      // If starting recording from stopped, reset to assume connection
+      setRemoteTranscription(undefined);
+      setWasRecordingOnline(true);
+    }
+
+    if (!window.navigator.onLine) {
+      setWasRecordingOnline(false);
     }
 
     setRecordingStatus(RecordingStatusEnum.RECORDING);
   };
 
   const handlePauseRecording = async () => {
-    await SpeechRecognition.stopListening();
+    if (listening) {
+      await SpeechRecognition.stopListening();
+    }
+    if (
+      mediaRecorderRef.current &&
+      mediaRecorderRef.current.state != "inactive"
+    ) {
+      mediaRecorderRef.current.pause();
+    }
     setRecordingStatus(RecordingStatusEnum.PAUSED);
   };
 
   const handleStopRecording = async () => {
     if (listening) {
       await SpeechRecognition.stopListening();
+    }
+    if (
+      mediaRecorderRef.current &&
+      mediaRecorderRef.current.state != "inactive"
+    ) {
+      mediaRecorderRef.current.stop();
+      mediaRecorderRef.current.stream
+        .getTracks()
+        .forEach((track) => track.stop());
     }
     setRecordingStatus(RecordingStatusEnum.STOPPED);
   };
@@ -69,8 +134,14 @@ const Recorder: FC<RecorderProps> = ({}) => {
           Stop
         </button>
       </div>
+      {!wasRecordingOnline && (
+        <h4>
+          Connection issues during recording, recording will be transcribed once
+          connection is restored
+        </h4>
+      )}
       <h3>Transcription</h3>
-      <p>{transcript}</p>
+      <p>{wasRecordingOnline ? transcript : remoteTranscription}</p>
     </div>
   );
 };
