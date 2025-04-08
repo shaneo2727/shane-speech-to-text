@@ -9,12 +9,14 @@
     "vite:build": "tsc -b && vite build",
     "api:dev": "node src/api/server.js",
     "lint": "eslint shane-speech-to-text",
+    "test": "vitest",
     "preview": "vite preview"
   },
   "dependencies": {
     "@google-cloud/speech": "^7.0.1",
     "dotenv": "^16.4.7",
     "express": "^5.1.0",
+    "http-status-codes": "^2.3.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-speech-recognition": "^4.0.0"
@@ -32,9 +34,12 @@
     "eslint-plugin-react-hooks": "^5.1.0",
     "eslint-plugin-react-refresh": "^0.4.19",
     "globals": "^15.15.0",
+    "playwright": "^1.51.1",
     "prettier": "3.5.3",
     "typescript": "~5.7.2",
     "typescript-eslint": "^8.24.1",
-    "vite": "^6.2.0"
+    "vite": "^6.2.0",
+    "vitest": "^3.1.1",
+    "vitest-browser-react": "^0.1.1"
   }
 }

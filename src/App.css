@@ -6,8 +6,29 @@
 }
 
 .controls {
+    margin-top: 16px;
     display: flex;
     justify-content: center;
     gap: 15px;
     margin-bottom: 20px;
+}
+
+.alert {
+    padding: 16px;
+    margin-top: 16px;
+    margin-bottom: 16px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+}
+
+.info {
+    background: rgb(229, 246, 253);
+}
+
+.warning {
+    background: rgb(255, 246, 234);
+}
+
+.error {
+    background: rgb(254, 239, 238);
 }

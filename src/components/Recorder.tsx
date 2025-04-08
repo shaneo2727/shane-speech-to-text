@@ -19,18 +19,24 @@ const Recorder: FC<RecorderProps> = ({}) => {
     RecordingStatusEnum.STOPPED,
   );
   const [remoteTranscription, setRemoteTranscription] = useState<string>();
+  const [remoteTranscriptionError, setRemoteTranscriptionError] =
+    useState<boolean>(false);
   const [wasRecordingOnline, setWasRecordingOnline] = useState<boolean>(true);
 
   const mediaRecorderRef = useRef<MediaRecorder>(null);
 
   const handleOnline = async () => {
     if (!wasRecordingOnline) {
-      const res = await fetch("api/v1/google_text_to_speech", {
-        method: "POST",
-        body: audioBlob,
-      });
-      const jsonResult = await res.json();
-      setRemoteTranscription(jsonResult["results"]);
+      try {
+        const res = await fetch("api/v1/google_text_to_speech", {
+          method: "POST",
+          body: audioBlob,
+        });
+        const jsonResult = await res.json();
+        setRemoteTranscription(jsonResult["results"]);
+      } catch (error) {
+        setRemoteTranscriptionError(true);
+      }
     }
   };
 
@@ -67,6 +73,7 @@ const Recorder: FC<RecorderProps> = ({}) => {
       // If starting recording from stopped, reset to assume connection
       setRemoteTranscription(undefined);
       setWasRecordingOnline(true);
+      setRemoteTranscriptionError(false);
     }
 
     if (!window.navigator.onLine) {
@@ -107,7 +114,24 @@ const Recorder: FC<RecorderProps> = ({}) => {
 
   return (
     <div>
-      <h2>Voice Recorder & Transcriber</h2>
+      {remoteTranscriptionError && (
+        <div className="alert error">
+          <h5 style={{ margin: 0 }}>
+            An error has occurred during transcription
+          </h5>
+        </div>
+      )}
+      <h2 style={{ margin: 0 }}>Voice Recorder & Transcriber</h2>
+      {!wasRecordingOnline &&
+        audioBlob &&
+        recordingStatus == RecordingStatusEnum.STOPPED && (
+          <div className="alert warning">
+            <h5 style={{ margin: 0 }}>
+              A recording is awaiting transcription, recording a new one will
+              overwrite the existing one
+            </h5>
+          </div>
+        )}
       <div className="controls">
         <button
           onClick={handleStartRecording}
@@ -135,10 +159,12 @@ const Recorder: FC<RecorderProps> = ({}) => {
         </button>
       </div>
       {!wasRecordingOnline && (
-        <h4>
-          Connection issues during recording, recording will be transcribed once
-          connection is restored
-        </h4>
+        <div className="alert info">
+          <h5 style={{ margin: 0 }}>
+            Connection issues during recording, recording will be transcribed
+            once connection is restored
+          </h5>
+        </div>
       )}
       <h3>Transcription</h3>
       <p>{wasRecordingOnline ? transcript : remoteTranscription}</p>
