@@ -19,6 +19,8 @@ const Recorder: FC<RecorderProps> = ({}) => {
     RecordingStatusEnum.STOPPED,
   );
   const [remoteTranscription, setRemoteTranscription] = useState<string>();
+  const [isProcessingRemoteTranscription, setIsProcessingRemoteTranscription] =
+    useState<boolean>(false);
   const [remoteTranscriptionError, setRemoteTranscriptionError] =
     useState<boolean>(false);
   const [wasRecordingOnline, setWasRecordingOnline] = useState<boolean>(true);
@@ -26,16 +28,20 @@ const Recorder: FC<RecorderProps> = ({}) => {
   const mediaRecorderRef = useRef<MediaRecorder>(null);
 
   const handleOnline = async () => {
-    if (!wasRecordingOnline) {
+    if (!wasRecordingOnline && audioBlob) {
       try {
+        setIsProcessingRemoteTranscription(true);
         const res = await fetch("api/v1/google_text_to_speech", {
           method: "POST",
           body: audioBlob,
         });
         const jsonResult = await res.json();
         setRemoteTranscription(jsonResult["results"]);
+        setRemoteTranscriptionError(false);
+        setIsProcessingRemoteTranscription(false);
       } catch (error) {
         setRemoteTranscriptionError(true);
+        setIsProcessingRemoteTranscription(false);
       }
     }
   };
@@ -46,7 +52,7 @@ const Recorder: FC<RecorderProps> = ({}) => {
     return () => {
       window.removeEventListener("online", handleOnline);
     };
-  }, [wasRecordingOnline]);
+  }, [wasRecordingOnline, audioBlob]);
 
   const handleStartRecording = async () => {
     await SpeechRecognition.startListening({ continuous: true });
@@ -115,9 +121,9 @@ const Recorder: FC<RecorderProps> = ({}) => {
   return (
     <div>
       {remoteTranscriptionError && (
-        <div className="alert error">
+        <div onClick={handleOnline} className="alert error">
           <h5 style={{ margin: 0 }}>
-            An error has occurred during transcription
+            An error has occurred during transcription, click to retry
           </h5>
         </div>
       )}
@@ -138,6 +144,7 @@ const Recorder: FC<RecorderProps> = ({}) => {
           disabled={recordingStatus === RecordingStatusEnum.RECORDING}
           className={`control-button record ${recordingStatus === RecordingStatusEnum.RECORDING ? "active" : ""}`}
         >
+          <span className="record-icon icon"></span>
           Record
         </button>
         <button
@@ -148,6 +155,7 @@ const Recorder: FC<RecorderProps> = ({}) => {
           }
           className="control-button pause"
         >
+          <span className="pause-icon icon"></span>
           Pause
         </button>
         <button
@@ -155,6 +163,7 @@ const Recorder: FC<RecorderProps> = ({}) => {
           disabled={recordingStatus === RecordingStatusEnum.STOPPED}
           className="control-button stop"
         >
+          <span className="stop-icon icon"></span>
           Stop
         </button>
       </div>
@@ -167,7 +176,13 @@ const Recorder: FC<RecorderProps> = ({}) => {
         </div>
       )}
       <h3>Transcription</h3>
-      <p>{wasRecordingOnline ? transcript : remoteTranscription}</p>
+      <p>
+        {wasRecordingOnline
+          ? transcript
+          : isProcessingRemoteTranscription
+            ? "Processing..."
+            : remoteTranscription}
+      </p>
     </div>
   );
 };

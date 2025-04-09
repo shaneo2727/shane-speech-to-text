@@ -53,6 +53,26 @@ button:focus-visible {
     outline: 4px auto -webkit-focus-ring-color;
 }
 
+.icon {
+    background-size: 20px !important;
+    margin-right: 8px;
+    float: left;
+    width: 20px;
+    height: 20px;
+}
+
+.record-icon {
+    background: url(imgs/record_icon.png);
+}
+
+.pause-icon {
+    background: url(imgs/pause_icon.png);
+}
+
+.stop-icon {
+    background: url(imgs/stop_icon.png);
+}
+
 @media (prefers-color-scheme: light) {
     :root {
         color: #213547;

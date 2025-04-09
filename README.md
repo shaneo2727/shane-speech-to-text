@@ -3,12 +3,14 @@
 <p>Ensure node is installed.<br>
 Project bootstrapped with vite as create-react-app has been deprecated.<br>
 To run locally, use npm run dev<br>
-To run tests, npx playwright install will need to be run after npm install
+To run tests, npx playwright install will need to be run after npm install<br>
 Tests are run with vitest (jest is not fully compatible with Vite), and are run headlessly with playwright in a chromium browser
 </p>
 
-Google Speech-To-Text API is used for offline transcriptions, an API key can be provided.
-Free 90-day trial is currently being used.
+<p>Google Speech-To-Text API is used for offline transcriptions, an API key can be provided.
+Free 90-day trial is currently being used.<br>
+The app makes a request to a backend express server to handle sending the audio blob to Google
+</p>
 
 Some possible extensions to make app more user-friendly:
 

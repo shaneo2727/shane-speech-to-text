@@ -7,15 +7,16 @@ dotenv.config();
 
 const app = express();
 const port = process.env.VITE_API_PORT;
+const client = new speech.SpeechClient({
+  apiKey: process.env.GOOGLE_API_KEY,
+});
 
 app.post("/api/v1/google_text_to_speech", (req, res) => {
   req.on("readable", async function () {
     const data = req.read();
     try {
       if (data) {
-        const client = new speech.SpeechClient({
-          apiKey: process.env.GOOGLE_API_KEY,
-        });
+        console.log(data);
         const audio = {
           content: data,
         };
@@ -28,7 +29,9 @@ app.post("/api/v1/google_text_to_speech", (req, res) => {
           audio: audio,
           config: config,
         };
+        console.log(request);
         const [response] = await client.recognize(request);
+        console.log(response);
         if (response.results && response.results.length > 0) {
           if (
             response.results[0].alternatives &&
@@ -38,14 +41,10 @@ app.post("/api/v1/google_text_to_speech", (req, res) => {
               results: response.results[0].alternatives[0].transcript,
             });
           else {
-            res
-              .status(StatusCodes.INTERNAL_SERVER_ERROR)
-              .send("Google Speech-To-Text service failed, no alternatives");
+            throw new Error();
           }
         } else {
-          res
-            .status(StatusCodes.INTERNAL_SERVER_ERROR)
-            .send("Google Speech-To-Text service failed, no results");
+          throw new Error();
         }
       }
     } catch (error) {
